@@ -11,3 +11,7 @@ wheels/
 
 # Training logs / checkpoints
 logs/
+
+# Reference checkouts (separate git repos; dependencies come from PyPI)
+/Genesis/
+/rsl_rl/
