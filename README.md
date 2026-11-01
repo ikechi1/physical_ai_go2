@@ -43,7 +43,7 @@ uv run go2-make-walk-jump-demo-video  # 歩行＋ジャンプ     → videos/go2
 
 ## ファイル
 
-`src/physical_ai_go2/` の中身。
+`src/` の中身。
 
 ### `environment/`: 強化学習の環境
 

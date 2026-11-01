@@ -13,10 +13,10 @@ import torch
 
 import genesis
 
-from physical_ai_go2.control.keyboard_controller import KeyboardController
-from physical_ai_go2.control.policy_loading import LoadedPolicy
-from physical_ai_go2.video.key_demo_timeline import DEMO_SECONDS, find_pressed_key
-from physical_ai_go2.video.key_input_overlay import KeyInputOverlayDrawer
+from control.keyboard_controller import KeyboardController
+from control.policy_loading import LoadedPolicy
+from video.key_demo_timeline import DEMO_SECONDS, find_pressed_key
+from video.key_input_overlay import KeyInputOverlayDrawer
 
 FRAMES_PER_SECOND = 50  # one frame per control step (0.02 s), so 1x speed
 VIDEO_WIDTH = 1280

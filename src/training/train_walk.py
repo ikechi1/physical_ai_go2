@@ -4,8 +4,8 @@ Walking policy: follows forward / sideways / turning velocity commands (no jump 
 uv run go2-train-walk    # logs/go2-walking/
 """
 
-from physical_ai_go2.training.training_config import create_observation_config, create_robot_config
-from physical_ai_go2.training.training_runner import run_training
+from training.training_config import create_observation_config, create_robot_config
+from training.training_runner import run_training
 
 
 def create_reward_config():

@@ -1,7 +1,7 @@
 import numpy
 from PIL import Image, ImageDraw
 
-from physical_ai_go2.video.video_drawing import VideoFrameDrawer
+from video.video_drawing import VideoFrameDrawer
 
 PANEL_HEIGHT = 200
 KEY_SIZE = 84

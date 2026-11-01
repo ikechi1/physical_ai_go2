@@ -7,7 +7,7 @@ from rsl_rl.runners import OnPolicyRunner
 
 import genesis
 
-from physical_ai_go2.environment.go2_environment import Go2Environment
+from environment.go2_environment import Go2Environment
 
 
 # [解説] logs/<実験名>/model_<回数>.pt のうち、学習回数がいちばん大きいファイルを返す。

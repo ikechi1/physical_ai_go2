@@ -6,10 +6,10 @@ from tensordict import TensorDict
 import genesis
 from genesis.utils.geom import inv_quat, quat_to_xyz, transform_by_quat, transform_quat_by_quat
 
-from physical_ai_go2.environment.foot_contact_tracker import FootContactTracker
-from physical_ai_go2.environment.jump_command import JumpCommand
-from physical_ai_go2.environment.rewards import Rewards
-from physical_ai_go2.environment.velocity_commands import VelocityCommands
+from environment.foot_contact_tracker import FootContactTracker
+from environment.jump_command import JumpCommand
+from environment.rewards import Rewards
+from environment.velocity_commands import VelocityCommands
 
 # control frequency on the real robot is 50 Hz
 STEP_SECONDS = 0.02

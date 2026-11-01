@@ -14,16 +14,19 @@ dependencies = [
 ]
 
 [project.scripts]
-physical-ai-go2 = "physical_ai_go2:main"
-go2-train-walk = "physical_ai_go2.training.train_walk:main"
-go2-train-jump = "physical_ai_go2.training.train_jump:main"
-go2-train-walk-jump = "physical_ai_go2.training.train_walk_jump:main"
-go2-teleop = "physical_ai_go2.control.teleop:main"
-go2-make-video = "physical_ai_go2.video.make_video:main"
-go2-make-key-demo-video = "physical_ai_go2.video.make_key_demo_video:main"
-go2-make-jump-demo-video = "physical_ai_go2.video.make_jump_demo_video:main"
-go2-make-walk-jump-demo-video = "physical_ai_go2.video.make_walk_jump_demo_video:main"
+go2-train-walk = "training.train_walk:main"
+go2-train-jump = "training.train_jump:main"
+go2-train-walk-jump = "training.train_walk_jump:main"
+go2-teleop = "control.teleop:main"
+go2-make-video = "video.make_video:main"
+go2-make-key-demo-video = "video.make_key_demo_video:main"
+go2-make-jump-demo-video = "video.make_jump_demo_video:main"
+go2-make-walk-jump-demo-video = "video.make_walk_jump_demo_video:main"
 
 [build-system]
 requires = ["uv_build>=0.13.6,<0.14.0"]
 build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = "src"
+module-name = ["control", "environment", "training", "video"]

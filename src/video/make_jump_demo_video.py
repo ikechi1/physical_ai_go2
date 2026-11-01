@@ -13,10 +13,10 @@ import torch
 
 import genesis
 
-from physical_ai_go2.control.keyboard_controller import KeyboardController
-from physical_ai_go2.control.policy_loading import LoadedPolicy
-from physical_ai_go2.video.jump_demo_overlay import JumpDemoOverlayDrawer
-from physical_ai_go2.video.jump_demo_timeline import (
+from control.keyboard_controller import KeyboardController
+from control.policy_loading import LoadedPolicy
+from video.jump_demo_overlay import JumpDemoOverlayDrawer
+from video.jump_demo_timeline import (
     AFTER_SLOW_SECONDS,
     JUMP_DEMO_SCENES,
     KEY_DISPLAY_SECONDS,

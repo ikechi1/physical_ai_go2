@@ -1,8 +1,8 @@
 import numpy
 from PIL import Image, ImageDraw
 
-from physical_ai_go2.video.key_input_overlay import KEY_LABELS
-from physical_ai_go2.video.video_drawing import VideoFrameDrawer
+from video.key_input_overlay import KEY_LABELS
+from video.video_drawing import VideoFrameDrawer
 
 PANEL_HEIGHT = 200
 KEY_WIDTH = 70

@@ -14,9 +14,9 @@ from rsl_rl.runners import OnPolicyRunner
 
 import genesis
 
-from physical_ai_go2.environment.go2_environment import Go2Environment
-from physical_ai_go2.training.training_config import create_ppo_config
-from physical_ai_go2.training.walking_weights import load_walking_weights
+from environment.go2_environment import Go2Environment
+from training.training_config import create_ppo_config
+from training.walking_weights import load_walking_weights
 
 
 def create_argument_parser(default_experiment_name):

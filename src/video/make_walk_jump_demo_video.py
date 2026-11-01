@@ -13,12 +13,12 @@ import torch
 
 import genesis
 
-from physical_ai_go2.control.keyboard_controller import KeyboardController
-from physical_ai_go2.control.policy_loading import LoadedPolicy
-from physical_ai_go2.video.segment_motion_tracker import SegmentMotionTracker
-from physical_ai_go2.video.walk_jump_demo_overlay import WalkJumpDemoOverlayDrawer
-from physical_ai_go2.video.walk_jump_demo_timeline import EXPERIMENT_NAME, SUMMARY_SECONDS, WALK_JUMP_DEMO_SEGMENTS
-from physical_ai_go2.video.walk_jump_summary_card import WalkJumpSummaryCardDrawer
+from control.keyboard_controller import KeyboardController
+from control.policy_loading import LoadedPolicy
+from video.segment_motion_tracker import SegmentMotionTracker
+from video.walk_jump_demo_overlay import WalkJumpDemoOverlayDrawer
+from video.walk_jump_demo_timeline import EXPERIMENT_NAME, SUMMARY_SECONDS, WALK_JUMP_DEMO_SEGMENTS
+from video.walk_jump_summary_card import WalkJumpSummaryCardDrawer
 
 STEPS_PER_SECOND = 50  # one control step is 0.02 s
 STEP_SECONDS = 0.02

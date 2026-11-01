@@ -4,8 +4,8 @@ Jumping policy: stands still and jumps while the jump flag is raised (no velocit
 uv run go2-train-jump    # logs/go2-jump/
 """
 
-from physical_ai_go2.training.training_config import create_observation_config, create_robot_config
-from physical_ai_go2.training.training_runner import run_training
+from training.training_config import create_observation_config, create_robot_config
+from training.training_runner import run_training
 
 
 # [解説] その場ジャンプの報酬（仮説20）。歩行＆ジャンプ（train_walk_jump.py）でもこれを元にする。

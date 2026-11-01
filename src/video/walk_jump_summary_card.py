@@ -1,8 +1,8 @@
 import numpy
 from PIL import Image, ImageDraw
 
-from physical_ai_go2.video.video_drawing import CARD_BACKGROUND_COLOR, VideoFrameDrawer
-from physical_ai_go2.video.walk_jump_demo_overlay import LEVEL_COLORS, QUANTITY_LABELS
+from video.video_drawing import CARD_BACKGROUND_COLOR, VideoFrameDrawer
+from video.walk_jump_demo_overlay import LEVEL_COLORS, QUANTITY_LABELS
 
 TEXT_COLOR = (240, 240, 240)
 SUBTEXT_COLOR = (190, 205, 225)
