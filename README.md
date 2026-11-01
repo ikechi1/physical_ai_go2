@@ -26,6 +26,7 @@ uv run go2-make-video                 # 提出用の動画       → videos/go2_
 uv run go2-make-video --only s7       # 1 シーンだけ確認   → videos/s7.mp4
 uv run go2-make-key-demo-video        # 歩行のキー操作     → videos/go2_walk_keyboard.mp4
 uv run go2-make-jump-demo-video       # 仮説ごとのジャンプ → videos/go2_jump_hypotheses.mp4
+uv run go2-make-walk-jump-demo-video  # 歩行＋ジャンプ     → videos/go2_walk_jump_keyboard.mp4
 ```
 
 キーボード操作は、ビューアのウィンドウをクリックしてから行う。
@@ -78,3 +79,4 @@ uv run go2-make-jump-demo-video       # 仮説ごとのジャンプ → videos/g
 | `video_scenes.py` / `make_video.py` | 提出用の動画の構成・撮影 |
 | `key_demo_timeline.py` / `key_input_overlay.py` / `make_key_demo_video.py` | キー入力を表示する歩行デモ動画の台本・表示の描画・撮影 |
 | `jump_demo_timeline.py` / `jump_demo_overlay.py` / `make_jump_demo_video.py` | 仮説ごとのジャンプをキー入力の表示付きで見せるデモ動画の台本・表示の描画・撮影 |
+| `walk_jump_demo_timeline.py` / `walk_jump_demo_overlay.py` / `walk_jump_summary_card.py` / `segment_motion_tracker.py` / `make_walk_jump_demo_video.py` | 歩行＋ジャンプの全キーを操作し、指令と実測の差を見せるデモ動画の台本・表示・結果表・計測・撮影 |
