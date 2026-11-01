@@ -20,6 +20,7 @@ go2-train-jump = "physical_ai_go2.training.train_jump:main"
 go2-train-walk-jump = "physical_ai_go2.training.train_walk_jump:main"
 go2-teleop = "physical_ai_go2.control.teleop:main"
 go2-make-video = "physical_ai_go2.video.make_video:main"
+go2-make-key-demo-video = "physical_ai_go2.video.make_key_demo_video:main"
 
 [build-system]
 requires = ["uv_build>=0.13.6,<0.14.0"]

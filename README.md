@@ -24,6 +24,7 @@ uv run go2-teleop -e go2-walk-jump
 # 3. 動画の作成（logs/ の学習済みポリシーを使い、videos/ に保存する。--out で保存先を変える）
 uv run go2-make-video                 # 提出用の動画       → videos/go2_walk_jump.mp4
 uv run go2-make-video --only s7       # 1 シーンだけ確認   → videos/s7.mp4
+uv run go2-make-key-demo-video        # 歩行のキー操作     → videos/go2_walk_keyboard.mp4
 ```
 
 キーボード操作は、ビューアのウィンドウをクリックしてから行う。
@@ -74,3 +75,4 @@ uv run go2-make-video --only s7       # 1 シーンだけ確認   → videos/s7.
 | --- | --- |
 | `video_drawing.py` | 字幕の描画（各動画で共通） |
 | `video_scenes.py` / `make_video.py` | 提出用の動画の構成・撮影 |
+| `key_demo_timeline.py` / `key_input_overlay.py` / `make_key_demo_video.py` | キー入力を表示する歩行デモ動画の台本・表示の描画・撮影 |
