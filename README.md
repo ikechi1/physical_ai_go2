@@ -47,8 +47,9 @@ uv run go2-train-walk-jump   # 歩行＆ジャンプ → logs/go2-walk-jump/
 #   消して学習し直す: uv run go2-train-walk --overwrite
 
 # 2. キーボード操作（最新のチェックポイントを読み込む。-e で使うポリシーを選ぶ）
-uv run go2-teleop                   # logs/go2-walking/
-uv run go2-teleop -e go2-walk-jump
+uv run go2-teleop                   # 歩行だけ       → logs/go2-walking/
+uv run go2-teleop -e go2-jump       # ジャンプだけ   → logs/go2-jump/
+uv run go2-teleop -e go2-walk-jump  # 歩行＆ジャンプ → logs/go2-walk-jump/
 
 # 3. 動画の作成（logs/ の学習済みポリシーを使い、videos/ に保存する。--out で保存先を変える）
 uv run go2-make-video                 # 提出用の動画       → videos/go2_walk_jump.mp4
