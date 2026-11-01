@@ -7,7 +7,7 @@ Genesis シミュレーター上で Unitree Go2 をキーボード操作する�
 
 ## 動画
 
-https://youtu.be/uKjQGYj6qgA
+https://youtu.be/NElb_gTpc5w
 
 歩行のみ、その場ジャンプ（報酬の仮説ごとの動きの違い）、歩行＋ジャンプの順に、キー入力を表示しながら動きを見せる。キー入力は台本による再現で、`go2-teleop` と同じ `KeyboardController` を通して指令を作っている。
 
