@@ -14,9 +14,9 @@ import torch
 
 import genesis
 
-from physical_ai_go2.policy_loading import LoadedPolicy
-from physical_ai_go2.video_drawing import VideoFrameDrawer
-from physical_ai_go2.video_scenes import SCENES
+from physical_ai_go2.control.policy_loading import LoadedPolicy
+from physical_ai_go2.video.video_drawing import VideoFrameDrawer
+from physical_ai_go2.video.video_scenes import SCENES
 
 FRAMES_PER_SECOND = 50  # one frame per control step (0.02 s), so 1x speed
 VIDEO_WIDTH = 1280

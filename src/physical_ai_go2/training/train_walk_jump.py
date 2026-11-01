@@ -4,9 +4,9 @@ Walking + jumping policy: follows velocity commands and jumps while the jump fla
 uv run go2-train-walk-jump    # logs/go2-walk-jump/
 """
 
-from physical_ai_go2 import train_jump
-from physical_ai_go2.training_config import create_observation_config, create_robot_config
-from physical_ai_go2.training_runner import run_training
+from physical_ai_go2.training import train_jump
+from physical_ai_go2.training.training_config import create_observation_config, create_robot_config
+from physical_ai_go2.training.training_runner import run_training
 
 
 def create_reward_config():

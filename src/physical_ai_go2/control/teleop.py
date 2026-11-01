@@ -19,8 +19,8 @@ import torch
 
 import genesis
 
-from physical_ai_go2.keyboard_controller import KeyboardController
-from physical_ai_go2.policy_loading import LoadedPolicy
+from physical_ai_go2.control.keyboard_controller import KeyboardController
+from physical_ai_go2.control.policy_loading import LoadedPolicy
 
 
 def main():
