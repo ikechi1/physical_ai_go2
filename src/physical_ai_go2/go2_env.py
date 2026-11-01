@@ -148,6 +148,16 @@ class Go2Env:
         if self.jump_enabled:
             # [解説] ジャンプ1回の長さをステップ数に直したもの。1.0 秒 / 0.02 秒 = 50 ステップ。
             self.max_jump_length = math.ceil(command_cfg["jump_duration_s"] / self.dt)
+        # steps all four feet have been off the ground in a row (the feet are part of the calf links in this URDF)
+        # [解説] 滞空時間の計測用。Go2 の URDF では足先が calf（すね）のリンクに含まれているので、calf の接触力で接地を判定する。
+        self.feet_link_idx = [self.robot.get_link(f"{leg}_calf").idx_local for leg in ("FR", "FL", "RR", "RL")]
+        self.base_link_idx = self.robot.get_link("base").idx_local
+        self.airborne = torch.zeros((self.num_envs,), dtype=torch.bool, device=gs.device)
+        self.air_length_buf = torch.zeros((self.num_envs,), dtype=gs.tc_int, device=gs.device)
+        # takeoffs since the jump flag was raised (0 while not jumping)
+        # [解説] 仮説6用。跳べフラグが立ってから何回跳び上がったか（4本とも浮いた瞬間の回数）を数える。
+        self.jump_flights = torch.zeros((self.num_envs,), dtype=gs.tc_int, device=gs.device)
+        self.takeoff = torch.zeros((self.num_envs,), dtype=torch.bool, device=gs.device)  # took off this step
         self.extras = dict()  # extra information for logging
         self.manual_commands = False  # if True, commands are set externally (teleop) and never resampled
 
@@ -182,6 +192,11 @@ class Go2Env:
         # Seconds since the jump flag was raised (0 while not jumping)
         return self.jump_length_buf * self.dt
 
+    @property
+    def air_time(self):
+        # Seconds all four feet have been off the ground in a row (0 while any foot touches)
+        return self.air_length_buf * self.dt
+
     # [解説] 全環境ぶんの True の配列を作るだけの補助関数。
     def _all_envs(self):
         # explicit torch.bool: gs.tc_bool is int32 on some backends (Metal), which masks do not accept
@@ -193,11 +208,13 @@ class Go2Env:
         envs_idx = envs_idx & ~self.jumping
         self.commands[:, 3].masked_fill_(envs_idx, 1.0)
         self.jump_length_buf.masked_fill_(envs_idx, 0)
+        self.jump_flights.masked_fill_(envs_idx, 0)
 
     # [解説] envs_idx が True の環境でジャンプを終える（フラグを 0 にし、カウンタを 0 に戻す）。
     def _end_jump(self, envs_idx):
         self.commands[:, 3].masked_fill_(envs_idx, 0.0)
         self.jump_length_buf.masked_fill_(envs_idx, 0)
+        self.jump_flights.masked_fill_(envs_idx, 0)
 
     def _resample_commands(self, envs_idx):
         if self.manual_commands:
@@ -240,6 +257,26 @@ class Go2Env:
         self.projected_gravity = transform_by_quat(self.global_gravity, inv_base_quat)
         self.dof_pos = self.robot.get_dofs_position(self.motors_dof_idx)
         self.dof_vel = self.robot.get_dofs_velocity(self.motors_dof_idx)
+        # [解説] 4本とも接触力（上向き）が 1N 未満なら空中にいるとみなし、連続して空中にいるステップ数を数える。着地したら 0 に戻る。
+        self.foot_contact = foot_contact = self.robot.get_links_net_contact_force()[:, self.feet_link_idx, 2] > 1.0
+        airborne = ~foot_contact.any(dim=1)
+        # [解説] 前のステップは接地、今のステップは空中 → 跳び上がった瞬間。
+        self.takeoff = airborne & ~self.airborne
+        if self.jump_enabled:
+            # [解説] ジャンプ中なら跳び上がった回数を 1 増やす。
+            self.jump_flights += (self.takeoff & self.jumping).to(gs.tc_int)
+        self.airborne = airborne
+        self.air_length_buf = torch.where(self.airborne, self.air_length_buf + 1, 0)
+
+        # check termination (before the rewards, so that _reward_termination can see it); reset happens below
+        # [解説] 仮説W2: 終了の罰（_reward_termination）で使うため、終了判定を報酬の計算より前に移した。判定の中身は同じ。
+        self.reset_buf = self.episode_length_buf > self.max_episode_length
+        self.reset_buf |= torch.abs(self.base_euler[:, 1]) > self.env_cfg["termination_if_pitch_greater_than"]
+        self.reset_buf |= torch.abs(self.base_euler[:, 0]) > self.env_cfg["termination_if_roll_greater_than"]
+        self.reset_buf |= self.scene.rigid_solver.get_error_envs_mask()
+
+        # Compute timeout
+        self.extras["time_outs"] = (self.episode_length_buf > self.max_episode_length).to(dtype=gs.tc_float)
 
         # compute reward
         self.rew_buf.zero_()
@@ -253,15 +290,6 @@ class Go2Env:
             # [解説] そのあとの引き直しで、同じステップのうちに次のジャンプが始まることもある。
             self._end_jump(self.jump_length_buf >= self.max_jump_length)
         self._resample_commands(self.episode_length_buf % int(self.env_cfg["resampling_time_s"] / self.dt) == 0)
-
-        # check termination and reset
-        self.reset_buf = self.episode_length_buf > self.max_episode_length
-        self.reset_buf |= torch.abs(self.base_euler[:, 1]) > self.env_cfg["termination_if_pitch_greater_than"]
-        self.reset_buf |= torch.abs(self.base_euler[:, 0]) > self.env_cfg["termination_if_roll_greater_than"]
-        self.reset_buf |= self.scene.rigid_solver.get_error_envs_mask()
-
-        # Compute timeout
-        self.extras["time_outs"] = (self.episode_length_buf > self.max_episode_length).to(dtype=gs.tc_float)
 
         # Reset environment if necessary
         self._reset_idx(self.reset_buf)
@@ -294,6 +322,10 @@ class Go2Env:
             self.last_actions.zero_()
             self.last_dof_vel.zero_()
             self.episode_length_buf.zero_()
+            # spawned above the ground, so the first fall is not counted as a takeoff
+            # [解説] 出現直後は空中にいるので True にしておく。開始時の落下を「跳び上がった」と数えないため。
+            self.airborne.fill_(True)
+            self.air_length_buf.zero_()
             self.reset_buf.fill_(True)
         else:
             torch.where(envs_idx[:, None], self.init_base_pos, self.base_pos, out=self.base_pos)
@@ -309,6 +341,8 @@ class Go2Env:
             self.last_actions.masked_fill_(envs_idx[:, None], 0.0)
             self.last_dof_vel.masked_fill_(envs_idx[:, None], 0.0)
             self.episode_length_buf.masked_fill_(envs_idx, 0)
+            self.airborne.masked_fill_(envs_idx, True)
+            self.air_length_buf.masked_fill_(envs_idx, 0)
             self.reset_buf.masked_fill_(envs_idx, True)
 
         # fill extras
@@ -364,8 +398,12 @@ class Go2Env:
         return torch.exp(-ang_vel_error / self.reward_cfg["tracking_sigma"])
 
     def _reward_lin_vel_z(self):
-        # Penalize z axis base linear velocity
-        return torch.square(self.base_lin_vel[:, 2])
+        # Penalize z axis base linear velocity (optionally not while the jump flag is up)
+        rew = torch.square(self.base_lin_vel[:, 2])
+        if self.jump_enabled and self.reward_cfg.get("lin_vel_z_off_while_jumping", False):
+            # [解説] 仮説3: 跳べフラグが 1 の間は、上下方向の速度の罰をかけない（跳ぶ邪魔をしないため）。
+            rew = rew * ~self.jumping
+        return rew
 
     def _reward_action_rate(self):
         # Penalize changes in actions
@@ -376,5 +414,84 @@ class Go2Env:
         return torch.sum(torch.abs(self.dof_pos - self.default_dof_pos), dim=1)
 
     def _reward_base_height(self):
-        # Penalize base height away from target
-        return torch.square(self.base_pos[:, 2] - self.reward_cfg["base_height_target"])
+        # Penalize base height away from target (raised by jump_height_offset while the jump flag is up)
+        target = self.reward_cfg["base_height_target"]
+        if self.jump_enabled:
+            # [解説] 仮説1: 跳べフラグが 1 の間は、目標の体高を jump_height_offset（15cm）だけ上げる。
+            # [解説] フラグが 0 のときや、設定に jump_height_offset がないときは今まで通り 0.3m。
+            target = target + self.reward_cfg.get("jump_height_offset", 0.0) * self.commands[:, 3]
+        rew = torch.square(self.base_pos[:, 2] - target)
+        if self.jump_enabled and self.reward_cfg.get("base_height_off_while_jumping", False):
+            # [解説] 仮説4: 跳べフラグが 1 の間は、体高の罰をかけない（高く上がっても、しゃがんでも罰されない）。
+            rew = rew * ~self.jumping
+        return rew
+
+    def _reward_jump_air_time(self):
+        # Reward every step spent airborne during a jump, up to jump_air_time_target seconds per flight
+        # [解説] 仮説2: 跳べフラグが 1 の間、4本とも浮いているステップごとに報酬 1。
+        # [解説] 1回の滞空で jump_air_time_target（0.2 秒）を超えたぶんは報酬なし。1回のジャンプで得られる報酬は最大で「重み × 0.2 秒」。
+        # [解説] 仮説14B: jump_air_time_min があれば、空中に出てから min 秒を超えたところから target 秒ぶんだけ払う。
+        # [解説] min 秒より短い滞空（脚を浮かせて落ちるだけの落下など）には払わない。
+        air_time_min = self.reward_cfg.get("jump_air_time_min", 0.0)
+        within_target = (self.air_time > air_time_min) & (
+            self.air_time <= air_time_min + self.reward_cfg["jump_air_time_target"]
+        )
+        rew = (self.jumping & self.airborne & within_target).to(gs.tc_float)
+        if self.reward_cfg.get("jump_air_time_first_flight_only", False):
+            # [解説] 仮説6: 1回の跳べフラグにつき、最初の滞空だけに報酬を出す。2回目以降に跳ねても報酬は増えない。
+            rew = rew * (self.jump_flights == 1)
+        return rew
+
+    def _reward_base_contact(self):
+        # Penalize the trunk (base link) touching the ground
+        # [解説] 仮説10: 胴体（base リンク）の上向きの接触力が 1N 以上なら、1 ステップごとに 1 の罰（重みは負）。
+        return (self.robot.get_links_net_contact_force()[:, self.base_link_idx, 2] > 1.0).float()
+
+    def _reward_crouch_down_vel(self):
+        # Penalize squared downward (world frame) base velocity during the crouch phase of a jump
+        # [解説] 仮説11: しゃがみ期（フラグから jump_up_vel_start_s 秒）の間、下向きの速度の 2 乗に比例した罰（重みは負）。
+        # [解説] 2 乗なので、同じ深さでも、重力で一気に落ちると大きく、ゆっくりしゃがむと小さい罰になる。
+        down_vel = self.robot.get_vel()[:, 2].clamp(max=0.0)
+        crouch_phase = self.jumping & (self.jump_time <= self.reward_cfg["jump_up_vel_start_s"])
+        return torch.square(down_vel) * crouch_phase
+
+    def _reward_extra_flight(self):
+        # Penalize every takeoff after the first one while the jump flag is up
+        # [解説] 仮説19: フラグ中に 2 回目以降の離陸が起きたその瞬間に 1（重みは負）。跳ね返りのたびに罰が入る。
+        return (self.takeoff & self.jumping & (self.jump_flights >= 2)).to(gs.tc_float)
+
+    def _reward_landed_stance(self):
+        # Reward every step with all four feet on the ground after the first flight of a jump
+        # [解説] 仮説20: フラグ中、1 回目の飛行のあと（jump_flights >= 1）に 4 本とも接地しているステップごとに 1。
+        # [解説] 着地してから静かに立っている時間が長いほど報酬が増える。跳ね返ると接地していない時間は 0。跳ばなければ 0。
+        all_feet_down = self.foot_contact.all(dim=1)
+        return (self.jumping & (self.jump_flights >= 1) & all_feet_down).to(gs.tc_float)
+
+    def _reward_termination(self):
+        # Penalize episodes ending early (falls / tilt), but not time-outs
+        # [解説] 仮説W2: 傾きすぎなどでエピソードが途中で終わったステップに 1（重みは負）。時間切れの終了は罰しない。
+        return (self.reset_buf & ~self.extras["time_outs"].bool()).to(gs.tc_float)
+
+    def _reward_jump_one_flight(self):
+        # Paid once on the last step of a jump if exactly one takeoff happened while the jump flag was up
+        # [解説] 仮説12: フラグが 0 に戻る直前のステップ（この直後に _end_jump が呼ばれる）で、
+        # [解説] 跳び上がった回数がちょうど 1 回なら 1 を払う（0 回や 2 回以上なら 0）。
+        last_step = self.jumping & (self.jump_length_buf >= self.max_jump_length)
+        return (last_step & (self.jump_flights == 1)).to(gs.tc_float)
+
+    def _reward_jump_up_vel(self):
+        # Reward upward (world frame) base velocity during a jump, capped at jump_up_vel_max
+        # [解説] 仮説3: 跳べフラグが 1 の間、上向きの速度（m/s）に比例した報酬。下向きの速度は 0 として扱う（罰はしない）。
+        # [解説] jump_up_vel_max（2.0 m/s、約 20cm 跳ぶ速さ）より速くても報酬は増えない。
+        up_vel = self.robot.get_vel()[:, 2].clamp(min=0.0, max=self.reward_cfg["jump_up_vel_max"])
+        rew = up_vel * self.jumping
+        if "jump_up_vel_window_s" in self.reward_cfg:
+            # [解説] 仮説5: 跳べフラグが立ってから jump_up_vel_window_s 秒（踏み切り）の間だけ報酬を出す。
+            rew = rew * (self.jump_time <= self.reward_cfg["jump_up_vel_window_s"])
+        if "jump_up_vel_start_s" in self.reward_cfg:
+            # [解説] 仮説9: 跳べフラグが立ってから jump_up_vel_start_s 秒（しゃがみ期）は報酬を出さない。
+            rew = rew * (self.jump_time > self.reward_cfg["jump_up_vel_start_s"])
+        if "jump_up_vel_height_limit" in self.reward_cfg:
+            # [解説] 仮説5: 体高が jump_up_vel_height_limit 未満の間だけ報酬を出す。それより上に上がっても報酬は増えない。
+            rew = rew * (self.base_pos[:, 2] < self.reward_cfg["jump_up_vel_height_limit"])
+        return rew
