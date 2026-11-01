@@ -4,14 +4,13 @@ Jumping policy: stands still and jumps while the jump flag is raised (no velocit
 uv run go2-train-jump    # logs/go2-jump/
 """
 
-from physical_ai_go2.train_common import get_base_cfgs, run
+from physical_ai_go2.training_config import create_observation_config, create_robot_config
+from physical_ai_go2.training_runner import run_training
 
 
-def get_cfgs():
-    env_cfg, obs_cfg = get_base_cfgs()
-    # TODO: jump rewards. These are the walking rewards as a starting point; lin_vel_z and base_height
-    # penalize leaving the ground, so they need to be revised for jumping.
-    reward_cfg = {
+# [解説] その場ジャンプの報酬（仮説20）。歩行＆ジャンプ（train_walk_jump.py）でもこれを元にする。
+def create_reward_config():
+    return {
         "tracking_sigma": 0.25,
         "base_height_target": 0.3,
         # [解説] 仮説1（+15cm）は外した。0.15 に戻すと仮説1の設定になる。
@@ -55,7 +54,10 @@ def get_cfgs():
             "landed_stance": 8.0,
         },
     }
-    command_cfg = {
+
+
+def create_command_config():
+    return {
         # [解説] 跳べフラグを使うため指令は 4 つ。速度指令の範囲を 0 にして、その場で立つ・跳ぶだけを学習させる。
         # [解説] 歩行＆ジャンプ用と観測の形が同じなので、学習結果を比べやすい。
         "num_commands": 4,  # vx, vy, yaw rate, jump flag
@@ -65,15 +67,17 @@ def get_cfgs():
         # jump flag: raised with this probability at each command resample, then held for jump_duration_s
         # [解説] 1.0 なら4秒ごとに必ず跳ぶ（1.0 秒跳んで、残り 3 秒は立っている）。
         "jump_prob": 1.0,
-        # [解説] 跳べフラグを立てておく時間（秒）。この間がジャンプ1回ぶん。報酬で使う jump_time もこの範囲で動く。
+        # [解説] 跳べフラグを立てておく時間（秒）。この間がジャンプ1回ぶん。報酬で使うジャンプの経過時間もこの範囲で動く。
         "jump_duration_s": 1.0,
     }
 
-    return env_cfg, obs_cfg, reward_cfg, command_cfg
+
+def create_configs():
+    return create_robot_config(), create_observation_config(), create_reward_config(), create_command_config()
 
 
 def main():
-    run(get_cfgs, default_exp_name="go2-jump")
+    run_training(create_configs, default_experiment_name="go2-jump")
 
 
 if __name__ == "__main__":

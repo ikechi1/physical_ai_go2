@@ -36,9 +36,19 @@ uv run go2-teleop -e go2-walk-jump
 
 ## ファイル
 
-- `src/physical_ai_go2/go2_env.py` — Go2 環境（Genesis の `examples/locomotion/go2_env.py` に外部からの速度指令設定を追加）
-- `src/physical_ai_go2/train_common.py` — 学習の共通部分（PPO・ロボット・観測の設定と学習ループ）
-- `src/physical_ai_go2/train_walk.py` — 歩行ポリシーの報酬と指令（前後・横・旋回）
-- `src/physical_ai_go2/train_jump.py` — ジャンプポリシーの報酬と指令（跳べフラグのみ、その場で跳ぶ）
-- `src/physical_ai_go2/train_walk_jump.py` — 歩行＆ジャンプポリシーの報酬と指令（速度指令＋跳べフラグ）
-- `src/physical_ai_go2/teleop.py` — キーボード操作スクリプト
+`src/physical_ai_go2/` の中身。
+
+| ファイル | 役割 |
+| --- | --- |
+| `go2_environment.py` | Go2 の強化学習環境（Genesis の `examples/locomotion/go2_env.py` が元） |
+| `velocity_commands.py` | 速度指令（前後・横・旋回）の引き直しと外からの設定 |
+| `jump_command.py` | 跳べフラグ（1.0 秒間）とジャンプ中の経過時間・跳び上がった回数 |
+| `foot_contact_tracker.py` | 足と胴体の接地、滞空時間、跳び上がった瞬間の判定 |
+| `rewards.py` | 報酬の計算（報酬の名前と関数の対応） |
+| `training_config.py` | 学習の共通設定（PPO・ロボット・観測） |
+| `training_runner.py` | 学習の実行（引数の解析、ログフォルダ、学習ループ） |
+| `walking_weights.py` | 歩行ポリシーの重みを歩行＆ジャンプの初期値にする（`--init-from`） |
+| `train_walk.py` / `train_jump.py` / `train_walk_jump.py` | 歩行・その場ジャンプ・歩行＆ジャンプの報酬と指令 |
+| `policy_loading.py` | 学習済みポリシーと環境の読み込み（操作・動画用） |
+| `keyboard_controller.py` / `teleop.py` | キーボード操作 |
+| `video_scenes.py` / `video_drawing.py` / `make_video.py` | 提出用の動画の構成・字幕の描画・撮影（`uv run go2-make-video`） |

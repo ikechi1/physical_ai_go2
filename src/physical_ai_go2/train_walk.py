@@ -4,12 +4,12 @@ Walking policy: follows forward / sideways / turning velocity commands (no jump 
 uv run go2-train-walk    # logs/go2-walking/
 """
 
-from physical_ai_go2.train_common import get_base_cfgs, run
+from physical_ai_go2.training_config import create_observation_config, create_robot_config
+from physical_ai_go2.training_runner import run_training
 
 
-def get_cfgs():
-    env_cfg, obs_cfg = get_base_cfgs()
-    reward_cfg = {
+def create_reward_config():
+    return {
         "tracking_sigma": 0.25,
         "base_height_target": 0.3,
         "feet_height_target": 0.075,
@@ -22,7 +22,10 @@ def get_cfgs():
             "similar_to_default": -0.1,
         },
     }
-    command_cfg = {
+
+
+def create_command_config():
+    return {
         "num_commands": 3,  # vx, vy, yaw rate
         # wide command ranges so that the policy can be steered by keyboard (see teleop.py)
         "lin_vel_x_range": [-0.5, 1.0],
@@ -30,11 +33,13 @@ def get_cfgs():
         "ang_vel_range": [-1.0, 1.0],
     }
 
-    return env_cfg, obs_cfg, reward_cfg, command_cfg
+
+def create_configs():
+    return create_robot_config(), create_observation_config(), create_reward_config(), create_command_config()
 
 
 def main():
-    run(get_cfgs, default_exp_name="go2-walking")
+    run_training(create_configs, default_experiment_name="go2-walking")
 
 
 if __name__ == "__main__":
