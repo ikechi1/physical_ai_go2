@@ -16,3 +16,6 @@ logs/
 /Genesis/
 /rsl_rl/
 videos/
+
+# Generated report PDFs (built from report/report.html)
+/report/*.pdf
